@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>404 Error - Page Not Found</title>
+    <link href="https://fonts.googleapis.com/css2?family=Russo+One&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -17,6 +19,7 @@
             color: #33ff33;
             min-height: 100vh;
             padding: 20px;
+            position: relative;
         }
 
         .container {
@@ -117,7 +120,6 @@
             width: 100%;
             height: 100%;
             background: #1a1a1a;
-            display: none;
             justify-content: center;
             align-items: center;
             z-index: 100;
@@ -127,11 +129,36 @@
             font-size: 2em;
             text-align: center;
         }
+
+        .watermark {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-family: 'Russo One', sans-serif;
+            font-size: 24px;
+            color: rgba(51, 255, 51, 0.3);
+            pointer-events: none;
+            z-index: 999;
+            transform: rotate(-45deg);
+        }
+
+        .logo {
+            font-family: 'Russo One', sans-serif;
+            font-size: 28px;
+            color: #33ff33;
+            margin-bottom: 20px;
+            text-shadow: 0 0 5px rgba(51, 255, 51, 0.5);
+        }
     </style>
 </head>
+
 <body>
+    <!-- Watermark -->
+    <div class="watermark">ROBOGYAN</div>
+
     <!-- Initial 404 Error Page -->
     <div class="error-page" id="error-page">
+        <div class="logo">ROBOGYAN</div>
         <h1>404 - Page Not Found</h1>
         <p>The requested URL was not found on this server.</p>
         <p class="hidden-text">Three times the charm...</p>
@@ -140,6 +167,7 @@
     <!-- Game Container -->
     <div class="container">
         <div id="game-container">
+            <div class="logo">ROBOGYAN</div>
             <h1>Let's Play</h1>
             <div class="board">
                 <button class="cell"></button>
@@ -157,10 +185,10 @@
 
             <div class="riddle-container" id="riddleContainer">
                 <p class="riddle">
-                    Within these walls of learning's might,<br>
-                    Where future guardians take their flight,<br>
-                    In block the first, a sacred space,<br>
-                    Where <span class="secret-word" onclick="revealFinal()">practice</span> trials show their grace.
+                    Where bytes and beams converge below,
+                    In numbered halls where scholars go,
+                    Beneath the realm of CIVIL minds,
+                    The <span class="secret-word" onclick="revealFinal()">cornerstone</span> of code resides.
                 </p>
             </div>
         </div>
@@ -169,152 +197,122 @@
     <!-- Hidden Final Location -->
     <div id="finalLocation">
         <div class="final-text">
-            Mock Court - First Block
+            4th block BM
         </div>
     </div>
 
     <script>
-        // 404 Click Handler - Modified to be more controlled
+        // 404 Click Handler
         let clicks = 0;
         document.querySelector('h1').addEventListener('click', () => {
-            if (clicks < 3) {
-                clicks++;
-                if (clicks === 3) {
-                    setTimeout(() => {
-                        document.getElementById('error-page').style.display = 'none';
-                        document.getElementById('game-container').style.display = 'block';
-                    }, 500);
-                }
+            clicks++;
+            if (clicks === 3) {
+                document.getElementById('error-page').style.display = 'none';
+                document.getElementById('game-container').style.display = 'block';
             }
         });
 
-        // Improved Tic Tac Toe Logic
+        // Tic Tac Toe Logic
         const cells = document.querySelectorAll('.cell');
         const status = document.getElementById('status');
         let gameBoard = ['', '', '', '', '', '', '', '', ''];
         let gameActive = true;
-        let playerCanMove = true;
-
-        // Winning combinations
-        const winCombos = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
-            [0, 3, 6], [1, 4, 7], [2, 5, 8], // columns
-            [0, 4, 8], [2, 4, 6] // diagonals
-        ];
+        let waitingForComputer = false;
 
         cells.forEach((cell, index) => {
             cell.addEventListener('click', () => {
-                if (playerCanMove) {
-                    handlePlayerMove(index);
+                if (!waitingForComputer) {
+                    handleClick(index);
                 }
             });
         });
 
-        function handlePlayerMove(index) {
+        function handleClick(index) {
             if (gameBoard[index] !== '' || !gameActive) return;
 
-            // Player's move
             gameBoard[index] = 'X';
             cells[index].textContent = 'X';
-            playerCanMove = false;
 
-            if (checkWinner('X')) {
+            if (checkWinner()) {
                 gameActive = false;
-                status.textContent = "You won! 🎉";
+                status.textContent = "You won!";
                 document.getElementById('riddleContainer').style.display = 'block';
                 return;
             }
 
             if (gameBoard.includes('')) {
-                status.textContent = "Computer is thinking...";
-                setTimeout(makeSmartComputerMove, 1000);
+                status.textContent = "Computer's turn...";
+                waitingForComputer = true;
+                setTimeout(() => makeComputerMove(), 500);
             } else {
                 status.textContent = "It's a draw!";
                 gameActive = false;
             }
         }
 
-        function makeSmartComputerMove() {
-            if (!gameActive) return;
+        function makeComputerMove() {
+            if (!gameActive) {
+                waitingForComputer = false;
+                return;
+            }
 
-            let bestMove = findBestMove();
-            gameBoard[bestMove] = 'O';
-            cells[bestMove].textContent = 'O';
+            // Make the computer deliberately make suboptimal moves to make it easier
+            const emptyCells = gameBoard.reduce((acc, cell, index) =>
+                cell === '' ? [...acc, index] : acc, []);
 
-            if (checkWinner('O')) {
+            if (emptyCells.length === 0) {
+                waitingForComputer = false;
+                return;
+            }
+
+            // Simple strategy - avoid the center and corners if possible to make it easier
+            let selectedIndex;
+            const nonStrategicCells = emptyCells.filter(idx => idx !== 4 && idx !== 0 && idx !== 2 && idx !== 6 && idx !== 8);
+
+            if (nonStrategicCells.length > 0) {
+                selectedIndex = nonStrategicCells[Math.floor(Math.random() * nonStrategicCells.length)];
+            } else {
+                selectedIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            }
+
+            gameBoard[selectedIndex] = 'O';
+            cells[selectedIndex].textContent = 'O';
+
+            if (checkWinner()) {
                 status.textContent = "Computer wins!";
                 gameActive = false;
+                waitingForComputer = false;
                 return;
             }
 
-            if (!gameBoard.includes('')) {
-                status.textContent = "It's a draw!";
-                gameActive = false;
-                return;
-            }
-
-            status.textContent = "Your turn!";
-            playerCanMove = true;
+            status.textContent = "Your turn! You are X";
+            waitingForComputer = false;
         }
 
-        function findBestMove() {
-            // Try to win
-            let winningMove = findWinningMove('O');
-            if (winningMove !== -1) return winningMove;
+        function checkWinner() {
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
 
-            // Block player's winning move
-            let blockingMove = findWinningMove('X');
-            if (blockingMove !== -1) return blockingMove;
-
-            // Take center if available
-            if (gameBoard[4] === '') return 4;
-
-            // Take corners
-            const corners = [0, 2, 6, 8];
-            for (let corner of corners) {
-                if (gameBoard[corner] === '') return corner;
-            }
-
-            // Take any available edge
-            const edges = [1, 3, 5, 7];
-            for (let edge of edges) {
-                if (gameBoard[edge] === '') return edge;
-            }
-
-            // Take any available space
-            return gameBoard.findIndex(cell => cell === '');
-        }
-
-        function findWinningMove(player) {
-            for (let i = 0; i < 9; i++) {
-                if (gameBoard[i] === '') {
-                    gameBoard[i] = player;
-                    if (checkWinner(player)) {
-                        gameBoard[i] = '';
-                        return i;
-                    }
-                    gameBoard[i] = '';
-                }
-            }
-            return -1;
-        }
-
-        function checkWinner(player) {
-            return winCombos.some(combo => {
-                return combo.every(index => gameBoard[index] === player);
+            return winPatterns.some(pattern => {
+                const [a, b, c] = pattern;
+                return gameBoard[a] !== '' &&
+                    gameBoard[a] === gameBoard[b] &&
+                    gameBoard[b] === gameBoard[c];
             });
         }
 
         function resetGame() {
             gameBoard = ['', '', '', '', '', '', '', '', ''];
             gameActive = true;
-            playerCanMove = true;
+            waitingForComputer = false;
             cells.forEach(cell => cell.textContent = '');
-            status.textContent = "Your turn!";
+            status.textContent = "Your turn! You are X";
             document.getElementById('riddleContainer').style.display = 'none';
         }
 
-        // Keep the revealFinal function the same
         function revealFinal() {
             const finalLocation = document.getElementById('finalLocation');
             finalLocation.style.display = 'flex';
@@ -324,4 +322,5 @@
         }
     </script>
 </body>
+
 </html>
